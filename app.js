@@ -15,24 +15,24 @@ const btnVaciarCarrito = document.querySelector('.empty-cart-button')
 async function consultaAlServidor() {
     try {
         setLoading(true)
-    //Hace consultas HTTP
-    //Response_http es un objeto con datos de la Response
-    let response_http = await fetch(
-        //URL a consultar
-        'https://dummyjson.com/products',
-        //Objeto de consulta
-        {
-            method: "GET", //Obtener la lista de posteos
+        //Hace consultas HTTP
+        //Response_http es un objeto con datos de la Response
+        let response_http = await fetch(
+            //URL a consultar
+            'https://dummyjson.com/products',
+            //Objeto de consulta
+            {
+                method: "GET", //Obtener la lista de posteos
+            }
+        )
+        //Leemos y extraemos el JSON de la respuesta del servidor
+        let response = await response_http.json()
+        setTimeout(() => {
+            setLoading(false)
+            console.log(response)
+            setProductos(response)
         }
-    )
-    //Leemos y extraemos el JSON de la respuesta del servidor
-    let response = await response_http.json()
-    setTimeout(() => {
-        setLoading(false)
-        console.log(response)
-        setProductos(response)
-    }
-        , 1000)
+            , 1000)
     } catch (error) {
         setErrorServidor()
     }
@@ -42,13 +42,19 @@ async function consultaAlServidor() {
 
 // renders
 
-function setErrorServidor(error){
+function setErrorServidor(error) {
     errorServidor = error
     renderError()
 }
 
-function renderError(){
-    productContainer.innerHTML = '<p class="loading">Error en el servidor, por favor intente mas tarde</p>'
+
+function renderError() {
+    productContainer.innerHTML = `
+        <div class="spinner-container">
+            <h3 class="loading-text" style="color: var(--danger-color);">Error en el servidor</h3>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">Por favor intente más tarde</p>
+        </div>
+    `
 }
 function setLoading(new_loading_state) {
     cargandoProductos = new_loading_state
@@ -57,7 +63,12 @@ function setLoading(new_loading_state) {
 
 function renderLoadingProduct() {
     if (cargandoProductos) {
-        productContainer.innerHTML = '<p class="loading">Cargando productos...</p>'
+        productContainer.innerHTML = `
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p class="loading-text">Cargando productos...</p>
+            </div>
+        `
     } else {
         productContainer.innerHTML = ''
     }
@@ -76,13 +87,14 @@ function renderProducts() {
             <div class="information-product">
                 <img src="${producto.thumbnail}" alt="${producto.title}" class="product-image"/>
                 <h3 class="product-title">${producto.title}</h3>
-                <p class="product-description">${producto.description}</p>
-                <p class="product-price">${producto.price}</p>
+                <p class="product-description" id="desc-${producto.id}">${producto.description}</p>
+                <button class="btn-read-more" data-id="${producto.id}">Ver más</button>
+                <p class="product-price">$${producto.price}</p>
             </div>
             <div class="button-container">
                 ${isInCart
                 ?
-                ` <button class="add-to-cart-button" data-id="${producto.id}">Agregar al carrito</button>` 
+                ` <button class="add-to-cart-button" data-id="${producto.id}">Agregar al carrito</button>`
                 : `
                     <button class="btn-eliminar" data-product_id="${producto.id}">Eliminar Producto</button>
                 `
@@ -94,6 +106,21 @@ function renderProducts() {
     }
 
     productContainer.innerHTML = plantilla_productos
+
+    // Event listeners para "Ver más"
+    const btnReadMore = document.querySelectorAll('.btn-read-more')
+    btnReadMore.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.target.dataset.id
+            const desc = document.getElementById(`desc-${id}`)
+            desc.classList.toggle('expanded')
+            if (desc.classList.contains('expanded')) {
+                e.target.textContent = 'Ver menos'
+            } else {
+                e.target.textContent = 'Ver más'
+            }
+        })
+    })
 
     const btnAgregarAlCarrito = document.getElementsByClassName('add-to-cart-button')
     for (const btn of btnAgregarAlCarrito) {
@@ -137,9 +164,9 @@ function setCarrito(nuevoCarrito) {
     if (productoEnCarrito) {
         if (nuevoCarrito.quantity === 0) {
             carrito = carrito.filter(product => product.id !== nuevoCarrito.id)
-        } else if(productoEnStock.stock < nuevoCarrito.quantity) {
+        } else if (productoEnStock.stock < nuevoCarrito.quantity) {
             alert(`El producto ${productoEnCarrito.title} tiene un stock de ${productoEnStock.stock} unidades. No se puede agregar mas de ${productoEnStock.stock} unidades.`)
-        }else{
+        } else {
             productoEnCarrito.quantity = nuevoCarrito.quantity
         }
 
@@ -151,6 +178,7 @@ function setCarrito(nuevoCarrito) {
     renderCarrito(carrito)
     renderProducts()
 }
+
 
 function renderCarrito() {
     let plantilla_html = ''
@@ -175,9 +203,9 @@ function renderCarrito() {
         plantilla_html = '<p class="center">El carrito está vacío</p>'
     } else {
         plantilla_html += `
-        <p>Precio total: ${renderTotal()} <p>
-        <button class="empty-cart-button button-modificador-carrito">Vaciar carrito</button>
-        <button class="confirmar-carrito button-modificador-carrito">Confirmar compra</button>
+        <p class="cart-total">Total: $${renderTotal()}</p>
+        <button class="confirmar-carrito">Confirmar compra</button>
+        <button class="empty-cart-button">Vaciar carrito</button>
         `
 
     }
@@ -198,11 +226,26 @@ function renderCarrito() {
         })
     }
 
-    
+
     const btnConfirmar = document.querySelector('.confirmar-carrito')
-    if(btnConfirmar){
+    const modalConfirmacion = document.getElementById('modal-confirmacion')
+    const modalTotal = document.getElementById('modal-total')
+    const btnCerrarModal = document.getElementById('close-modal-btn')
+
+    if (btnConfirmar) {
         btnConfirmar.addEventListener("click", () => {
-            alert('el total de tu compra es $' + renderTotal()),
+            modalTotal.textContent = '$' + renderTotal()
+            modalConfirmacion.classList.remove('hidden')
+        })
+    }
+
+    if (btnCerrarModal) {
+        // Remover listener anterior para evitar duplicados si se renderiza múltiples veces
+        const newBtn = btnCerrarModal.cloneNode(true);
+        btnCerrarModal.parentNode.replaceChild(newBtn, btnCerrarModal);
+
+        newBtn.addEventListener("click", () => {
+            modalConfirmacion.classList.add('hidden')
             carrito = []
             setCarrito({
                 id: 0,
@@ -211,7 +254,7 @@ function renderCarrito() {
                 quantity: 0
             })
         })
-    }   
+    }
     const btnIncrementar = document.getElementsByClassName('btn-incrementar')
     for (const btn of btnIncrementar) {
         btn.addEventListener("click", () => {
@@ -239,16 +282,16 @@ function renderCarrito() {
             })
         })
     }
-    
+
 }
 
-function renderTotal(){
+function renderTotal() {
     let total = 0
     for (const product of carrito) {
         total += product.price * product.quantity
     }
     return total
 }
-    
+
 consultaAlServidor()
 renderCarrito()
