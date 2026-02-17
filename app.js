@@ -289,8 +289,9 @@ function renderTotal() {
     let total = 0
     for (const product of carrito) {
         total += product.price * product.quantity
+
     }
-    return total
+    return total.toFixed(2)
 }
 
 consultaAlServidor()
