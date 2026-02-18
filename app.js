@@ -187,7 +187,7 @@ function renderCarrito() {
             <div class="cart-item">
                 <h3>${product.title}</h3>
                 <p>Precio unitario:${product.price}</p>
-                <p>Precio:${product.price * product.quantity}</p>
+                <p>Precio:${(product.price * product.quantity).toFixed(2)}</p>
                 <div class='contenedor-modificadores-carrito'>
                     <button class="btn-decrementar button-modificador-carrito" data-id="${product.id}">-</button>
                     <p class="contador-productos">${product.quantity}</p>
