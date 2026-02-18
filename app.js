@@ -294,5 +294,26 @@ function renderTotal() {
     return total.toFixed(2)
 }
 
+
+const mobileToggleBtn = document.getElementById('mobile-toggle-btn')
+
+if (mobileToggleBtn) {
+    const iconCart = mobileToggleBtn.querySelector('.icon-cart')
+    const iconMenu = mobileToggleBtn.querySelector('.icon-menu')
+
+    mobileToggleBtn.addEventListener('click', () => {
+        document.body.classList.toggle('show-mobile-cart')
+
+        // Toggle Icons via class visibility
+        if (document.body.classList.contains('show-mobile-cart')) {
+            iconCart.classList.add('hidden')
+            iconMenu.classList.remove('hidden')
+        } else {
+            iconCart.classList.remove('hidden')
+            iconMenu.classList.add('hidden')
+        }
+    })
+}
+
 consultaAlServidor()
 renderCarrito()

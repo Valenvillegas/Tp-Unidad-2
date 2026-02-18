@@ -507,3 +507,85 @@ button {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
 }
+
+/* Mobile Toggle Button Logic */
+.hidden-desktop {
+    display: none;
+}
+
+#mobile-toggle-btn {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, background-color 0.2s;
+    display: none;
+    /* Default hidden */
+}
+
+#mobile-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+#mobile-toggle-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Mobile Specific Actions - Target < 1024px for consistency with layout break */
+@media (max-width: 1024px) {
+    #mobile-toggle-btn {
+        display: flex;
+        /* Show toggle button */
+    }
+
+    /* Products visible by default */
+    #section-products {
+        display: flex;
+        width: 100%;
+        padding-top: 1rem;
+    }
+
+    /* Cart hidden by default, fixed full screen when shown */
+    #aside-cart {
+        display: none;
+        /* Hide default */
+        width: 100%;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1500;
+        /* Below button but high enough */
+        background-color: var(--background-color);
+        padding: 5rem 1rem 1rem 1rem;
+        /* Space for button */
+        overflow-y: auto;
+        border: none;
+        order: unset;
+        /* Override previous order */
+    }
+
+    /* Toggle Logic applied via body class */
+    body.show-mobile-cart #aside-cart {
+        display: flex;
+    }
+
+    body.show-mobile-cart #section-products {
+        display: none;
+    }
+
+    /* Adjust modal z-index to be above everything */
+    .modal-overlay {
+        z-index: 3000;
+    }
+}
