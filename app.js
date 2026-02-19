@@ -158,25 +158,42 @@ function renderProducts() {
 }
 
 
-function setCarrito(nuevoCarrito) {
-    const productoEnCarrito = carrito.find(product => product.id === nuevoCarrito.id)
-    const productoEnStock = productos.products.find(product => product.id === nuevoCarrito.id)
-    if (productoEnCarrito) {
-        if (nuevoCarrito.quantity === 0) {
-            carrito = carrito.filter(product => product.id !== nuevoCarrito.id)
-        } else if (productoEnStock.stock < nuevoCarrito.quantity) {
-            alert(`El producto ${productoEnCarrito.title} tiene un stock de ${productoEnStock.stock} unidades. No se puede agregar mas de ${productoEnStock.stock} unidades.`)
-        } else {
-            productoEnCarrito.quantity = nuevoCarrito.quantity
-        }
-
-    } else {
-        if (nuevoCarrito.quantity > 0) {
-            carrito.push(nuevoCarrito)
-        }
+function setCarrito(nuevoProducto) {
+    // Si la cantidad es 0, eliminamos el producto del carrito
+    if (nuevoProducto.quantity === 0) {
+        carrito = carrito.filter(p => p.id !== nuevoProducto.id)
+        renderCarrito()
+        renderProducts()
+        return
     }
-    renderCarrito(carrito)
+
+    // Verificamos si hay stock suficiente
+    if (!productoEnStock(nuevoProducto.id, nuevoProducto.quantity)) {
+        const productoInfo = productos.products.find(p => p.id === nuevoProducto.id)
+        showStockModal(`El producto ${nuevoProducto.title} tiene un stock de ${productoInfo.stock} unidades. No se puede agregar más de ${productoInfo.stock} unidades.`)
+        return
+    }
+
+    // Si pasamos las validaciones, actualizamos el carrito
+    const itemEnCarrito = productoEnCarrito(nuevoProducto.id)
+
+    if (itemEnCarrito) {
+        itemEnCarrito.quantity = nuevoProducto.quantity
+    } else {
+        carrito.push(nuevoProducto)
+    }
+
+    renderCarrito()
     renderProducts()
+}
+
+function productoEnCarrito(id) {
+    return carrito.find(product => product.id === id)
+}
+
+function productoEnStock(id, quantity) {
+    const infoProducto = productos.products.find(p => p.id === id)
+    return infoProducto && infoProducto.stock >= quantity
 }
 
 
@@ -230,29 +247,11 @@ function renderCarrito() {
     const btnConfirmar = document.querySelector('.confirmar-carrito')
     const modalConfirmacion = document.getElementById('modal-confirmacion')
     const modalTotal = document.getElementById('modal-total')
-    const btnCerrarModal = document.getElementById('close-modal-btn')
 
     if (btnConfirmar) {
         btnConfirmar.addEventListener("click", () => {
-            modalTotal.textContent = '$' + renderTotal()
+            modalTotal.textContent = renderTotal()
             modalConfirmacion.classList.remove('hidden')
-        })
-    }
-
-    if (btnCerrarModal) {
-        // Remover listener anterior para evitar duplicados si se renderiza múltiples veces
-        const newBtn = btnCerrarModal.cloneNode(true);
-        btnCerrarModal.parentNode.replaceChild(newBtn, btnCerrarModal);
-
-        newBtn.addEventListener("click", () => {
-            modalConfirmacion.classList.add('hidden')
-            carrito = []
-            setCarrito({
-                id: 0,
-                title: '',
-                price: 0,
-                quantity: 0
-            })
         })
     }
     const btnIncrementar = document.getElementsByClassName('btn-incrementar')
@@ -317,3 +316,43 @@ if (mobileToggleBtn) {
 
 consultaAlServidor()
 renderCarrito()
+
+// Modal Functions
+const modalStock = document.getElementById('modal-stock')
+const stockMessage = document.getElementById('stock-modal-message')
+const closeStockBtn = document.getElementById('close-stock-modal-btn')
+const closeConfirmBtn = document.getElementById('close-confirm-modal-btn')
+const modalConfirmacion = document.getElementById('modal-confirmacion')
+
+function showStockModal(message) {
+    if (stockMessage) stockMessage.textContent = message
+    if (modalStock) modalStock.classList.remove('hidden')
+}
+
+// Event Listeners for Modals
+if (closeStockBtn) {
+    closeStockBtn.addEventListener('click', () => {
+        if (modalStock) modalStock.classList.add('hidden')
+    })
+}
+
+if (closeConfirmBtn) {
+    closeConfirmBtn.addEventListener('click', () => {
+        if (modalConfirmacion) modalConfirmacion.classList.add('hidden')
+
+        // Empty cart logic
+        carrito = []
+        renderCarrito()
+        renderProducts()
+    })
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', (e) => {
+    if (e.target === modalStock) {
+        modalStock.classList.add('hidden')
+    }
+    if (e.target === modalConfirmacion) {
+        modalConfirmacion.classList.add('hidden')
+    }
+})
